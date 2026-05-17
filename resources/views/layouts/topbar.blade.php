@@ -1,4 +1,13 @@
-<!-- navbar -->
+@php
+    $userId = session('user_id');
+    $headerUser = $userId ? \App\Models\User::find($userId) : null;
+    $minio = app(\App\Services\MinioService::class);
+    $avatarUrl = $headerUser?->avatar 
+        ? $minio->url($headerUser->avatar) 
+        : 'https://ui-avatars.com/api/?name=' . urlencode($headerUser?->name ?? 'Guest') . '&background=0d6efd&color=fff&size=128';
+@endphp
+
+<!-- topbar -->
 <div class="navbar-glass navbar navbar-expand-lg px-0 px-lg-4">
   <div class="container-fluid px-lg-0">
     <div class="d-flex align-items-center gap-4">
@@ -123,15 +132,19 @@
       <!-- Dropdown -->
       <li class="ms-3 dropdown">
         <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <img src="{{ asset('images/avatar/avatar-1.jpg') }}" alt="" class="avatar avatar-sm rounded-circle" />
+          <img src="{{ $avatarUrl }}"
+            alt="" class="avatar avatar-sm rounded-circle object-fit-cover"
+            onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($headerUser?->name ?? 'Guest') }}&background=0d6efd&color=fff&size=128'" />
         </a>
         <div class="dropdown-menu dropdown-menu-end dropdown-menu-md p-0">
           <div>
             <div class="d-flex gap-3 align-items-center border-dashed border-bottom px-4 py-4">
-              <img src="{{ asset('images/avatar/avatar-1.jpg') }}" alt="" class="avatar avatar-md rounded-circle" />
+              <img src="{{ $avatarUrl }}"
+                alt="" class="avatar avatar-md rounded-circle object-fit-cover"
+                onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($headerUser?->name ?? 'Guest') }}&background=0d6efd&color=fff&size=128'" />
               <div>
-                <h4 class="mb-0 fs-5">Jitu Chauhan</h4>
-                <p class="mb-0 text-secondar small">@imjituchauhan</p>
+                <h4 class="mb-0 fs-5">{{ $headerUser?->name ?? 'Guest' }}</h4>
+                <p class="mb-0 text-secondary small">{{ $headerUser?->email ?? '' }}</p>
               </div>
             </div>
             <div class="p-3 d-flex flex-column gap-1">

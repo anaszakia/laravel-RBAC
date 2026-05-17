@@ -33,8 +33,8 @@ class PermissionSeeder extends Seeder
             Permission::firstOrCreate(['slug' => $perm['slug']], $perm);
         }
 
-        // Assign semua permission ke role Administrator
-        $admin = Role::where('slug', 'admin')->first();
+        // Assign semua permission ke role SuperAdmin
+        $admin = Role::where('slug', 'superadmin')->first();
         if ($admin) {
             $admin->permissions()->sync(Permission::pluck('id'));
         }

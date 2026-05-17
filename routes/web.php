@@ -24,7 +24,7 @@ Route::middleware(['auth.custom', 'auto.logout'])->group(function () {
     Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
 
     // Menu management - hanya admin
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['role:superadmin'])->group(function () {
         Route::resource('/menus', MenuController::class);
         Route::resource('/roles', RoleController::class);
         Route::resource('/permissions', PermissionController::class);

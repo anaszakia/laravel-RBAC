@@ -10,13 +10,13 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = Role::create(['name' => 'Administrator', 'slug' => 'admin']);
+        $admin = Role::create(['name' => 'SuperAdmin', 'slug' => 'superadmin']);
         $user  = Role::create(['name' => 'User', 'slug' => 'user']);
 
         // Buat user admin
         User::create([
-            'name'     => 'Admin',
-            'email'    => 'admin@gmail.com',
+            'name'     => 'Super Admin',
+            'email'    => 'superadmin@gmail.com',
             'password' => Hash::make('12345678'),
             'role_id'  => $admin->id,
         ]);

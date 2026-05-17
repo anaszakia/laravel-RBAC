@@ -15,6 +15,7 @@
         ?? collect();
 @endphp
 
+
 {{-- ==================== MINI SIDEBAR ==================== --}}
 <div id="miniSidebar">
     <div class="brand-logo">
@@ -107,8 +108,10 @@
         <li>
             <div class="text-center py-5 upgrade-ui">
                 <div>
-                    <img src="{{ asset('images/avatar/avatar-1.jpg') }}"
-                        alt="" class="avatar avatar-md rounded-circle">
+                    <img src="{{ $user->avatar ? app(\App\Services\MinioService::class)->url($user->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name ?? 'Guest') . '&background=0d6efd&color=fff&size=128' }}"
+                        alt="{{ $user->name ?? 'Guest' }}"
+                        class="avatar avatar-md rounded-circle object-fit-cover"
+                        onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name ?? 'Guest') }}&background=0d6efd&color=fff&size=128'">
                     <div class="my-3">
                         <h5 class="mb-1 fs-6">{{ $user->name ?? 'Guest' }}</h5>
                         <span class="text-secondary">
@@ -218,15 +221,17 @@
             <li>
                 <div class="text-center py-5 upgrade-ui">
                     <div>
-                        <img src="{{ asset('images/avatar/avatar-1.jpg') }}"
-                            alt="" class="avatar avatar-md rounded-circle">
+                        <img src="{{ $user->avatar ? app(\App\Services\MinioService::class)->url($user->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name ?? 'Guest') . '&background=0d6efd&color=fff&size=128' }}"
+                            alt="{{ $user->name ?? 'Guest' }}"
+                            class="avatar avatar-md rounded-circle object-fit-cover"
+                            onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name ?? 'Guest') }}&background=0d6efd&color=fff&size=128'">
                         <div class="my-3">
                             <h5 class="mb-1 fs-6">{{ $user->name ?? 'Guest' }}</h5>
                             <span class="text-secondary">
                                 {{ $user?->roles->first()?->name ?? 'No Role' }}
                             </span>
                         </div>
-                        <a href="#!" class="btn btn-primary">Upgrade</a>
+                        <a href="#!" class="btn btn-primary d-none">Buy Pro</a>
                     </div>
                 </div>
             </li>
