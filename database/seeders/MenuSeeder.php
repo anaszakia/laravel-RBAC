@@ -9,10 +9,24 @@ class MenuSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        $driver = DB::getDriverName();
+
+        // Disable foreign key checks (support MySQL & PostgreSQL)
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        } elseif ($driver === 'pgsql') {
+            DB::statement('SET session_replication_role = replica;');
+        }
+
         DB::table('menu_role')->truncate();
         DB::table('menus')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        // Re-enable foreign key checks
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        } elseif ($driver === 'pgsql') {
+            DB::statement('SET session_replication_role = DEFAULT;');
+        }
 
         // Parent: Menu Management
         $menuManagement = DB::table('menus')->insertGetId([
