@@ -21,6 +21,35 @@
 
     <div class="card card-lg">
         <div class="card-body p-0">
+            <div class="p-4 border-bottom">
+                <form action="{{ route('menus.index') }}" method="GET">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-8 col-lg-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="ti ti-search"></i>
+                                </span>
+                                <input type="text"
+                                    name="search"
+                                    class="form-control"
+                                    value="{{ request('search') }}"
+                                    placeholder="Cari nama menu, URL, atau icon">
+                            </div>
+                        </div>
+                        <div class="col-md-auto">
+                            <button type="submit" class="btn btn-primary">
+                                Cari
+                            </button>
+                            @if(request('search'))
+                                <a href="{{ route('menus.index') }}" class="btn btn-white">
+                                    Reset
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </form>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-hover table-centered mb-0">
                     <thead>
@@ -39,7 +68,7 @@
                     <tbody>
                         @forelse ($menus as $menu)
                             <tr>
-                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $menus->firstItem() + $loop->index }}</td>
                                 <td>
                                     <strong>{{ $menu->name }}</strong>
                                     @if ($menu->children_count > 0)
@@ -152,13 +181,23 @@
                         @empty
                             <tr>
                                 <td colspan="9" class="text-center text-muted py-6">
-                                    Belum ada menu. <a href="{{ route('menus.create') }}">Tambah sekarang</a>
+                                    @if(request('search'))
+                                        Menu tidak ditemukan.
+                                    @else
+                                        Belum ada menu. <a href="{{ route('menus.create') }}">Tambah sekarang</a>
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
+
+            @if($menus->hasPages())
+                <div class="px-4 py-3 border-top">
+                    {{ $menus->links() }}
+                </div>
+            @endif
         </div>
     </div>
 

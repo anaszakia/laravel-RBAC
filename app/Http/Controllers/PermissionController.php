@@ -7,11 +7,20 @@ use Illuminate\Http\Request;
 
 class PermissionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $search = trim((string) $request->query('search'));
+
         $permissions = Permission::with('roles')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%");
+                });
+            })
             ->orderBy('name')
-            ->paginate(15);
+            ->paginate(10)
+            ->withQueryString();
 
         return view('admin.permissions.index', compact('permissions'));
     }

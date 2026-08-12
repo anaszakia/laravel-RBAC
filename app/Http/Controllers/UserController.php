@@ -11,11 +11,23 @@ class UserController extends Controller
 {
     public function __construct(protected MinioService $minio) {}
 
-    public function index()
+    public function index(Request $request)
     {
         abort_unless(can('users.view'), 403);
 
-        $users = User::with('role', 'roles')->orderBy('name')->paginate(10);
+        $search = trim((string) $request->query('search'));
+
+        $users = User::with('role', 'roles')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('admin.users.index', compact('users'));
     }

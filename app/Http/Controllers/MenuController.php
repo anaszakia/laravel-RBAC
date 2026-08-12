@@ -7,13 +7,28 @@ use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $menus = Menu::with('parent', 'roles')
+        $search = trim((string) $request->query('search'));
+
+        $menus = Menu::with('parent', 'roles', 'children.roles')
             ->whereNull('parent_id')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('url', 'like', "%{$search}%")
+                        ->orWhere('icon', 'like', "%{$search}%")
+                        ->orWhereHas('children', function ($query) use ($search) {
+                            $query->where('name', 'like', "%{$search}%")
+                                ->orWhere('url', 'like', "%{$search}%")
+                                ->orWhere('icon', 'like', "%{$search}%");
+                        });
+                });
+            })
             ->withCount('children')
             ->orderBy('order')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('admin.menus.index', compact('menus'));
     }

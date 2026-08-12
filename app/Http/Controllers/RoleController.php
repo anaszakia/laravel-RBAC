@@ -9,9 +9,20 @@ use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $roles = Role::withCount('users')->orderBy('name')->get();
+        $search = trim((string) $request->query('search'));
+
+        $roles = Role::withCount('users')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('admin.roles.index', compact('roles'));
     }

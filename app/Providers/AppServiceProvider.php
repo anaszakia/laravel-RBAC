@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\MinioService;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,6 +27,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Paginator::useBootstrapFive();
+
         // Register S3 driver support untuk Flysystem
         // Ini memastikan AWS S3Client tersedia saat filesystem manager diakses
         \Illuminate\Support\Facades\Storage::resolved(function ($storage) {

@@ -2,66 +2,89 @@
 
 namespace Database\Seeders;
 
+use App\Models\Menu;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class MenuSeeder extends Seeder
 {
     public function run(): void
     {
-        $driver = DB::getDriverName();
+        $admin = Role::where('slug', 'superadmin')->first();
 
-        // Disable foreign key checks (support MySQL & PostgreSQL)
-        if ($driver === 'mysql') {
-            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        } elseif ($driver === 'pgsql') {
-            DB::statement('SET session_replication_role = replica;');
-        }
-
-        DB::table('menu_role')->truncate();
-        DB::table('menus')->truncate();
-
-        // Re-enable foreign key checks
-        if ($driver === 'mysql') {
-            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-        } elseif ($driver === 'pgsql') {
-            DB::statement('SET session_replication_role = DEFAULT;');
-        }
-
-        // Parent: Menu Management
-        $menuManagement = DB::table('menus')->insertGetId([
-            'name'       => 'Menu Management',
-            'url'        => null,
-            'icon'       => 'ti ti-menu-deep',
-            'parent_id'  => null,
-            'order'      => 1,
-            'is_active'  => true,
-            'created_at' => now(),
-            'updated_at' => now(),
+        $dashboard = $this->menu([
+            'name'  => 'Dashboard',
+            'url'   => '/dashboard',
+            'icon'  => 'ti ti-layout-dashboard',
+            'order' => 1,
         ]);
 
-        // Children
-        DB::table('menus')->insert([
-            [
-                'name'       => 'Menus',
-                'url'        => '/menus',
-                'icon'       => 'ti ti-menu-2',
-                'parent_id'  => $menuManagement,
-                'order'      => 1,
-                'is_active'  => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name'       => 'Roles',
-                'url'        => '/roles',
-                'icon'       => 'ti ti-shield',
-                'parent_id'  => $menuManagement,
-                'order'      => 2,
-                'is_active'  => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        $menuManagement = $this->menu([
+            'name'  => 'Menu Management',
+            'url'   => null,
+            'icon'  => 'ti ti-menu-deep',
+            'order' => 2,
         ]);
+
+        $children = [
+            [
+                'name'      => 'User',
+                'url'       => '/users',
+                'icon'      => 'ti ti-users',
+                'parent_id' => $menuManagement->id,
+                'order'     => 1,
+            ],
+            [
+                'name'      => 'Roles',
+                'url'       => '/roles',
+                'icon'      => 'ti ti-shield',
+                'parent_id' => $menuManagement->id,
+                'order'     => 2,
+            ],
+            [
+                'name'      => 'Permission',
+                'url'       => '/permissions',
+                'icon'      => 'ti ti-key',
+                'parent_id' => $menuManagement->id,
+                'order'     => 3,
+            ],
+            [
+                'name'      => 'Menus',
+                'url'       => '/menus',
+                'icon'      => 'ti ti-menu-2',
+                'parent_id' => $menuManagement->id,
+                'order'     => 4,
+            ],
+        ];
+
+        $menus = collect([$dashboard, $menuManagement]);
+
+        foreach ($children as $child) {
+            $menus->push($this->menu($child));
+        }
+
+        if ($admin) {
+            foreach ($menus as $menu) {
+                $menu->roles()->syncWithoutDetaching([$admin->id]);
+            }
+        }
+    }
+
+    private function menu(array $data): Menu
+    {
+        $lookup = $data['url'] === null
+            ? ['name' => $data['name'], 'url' => null]
+            : ['url' => $data['url']];
+
+        return Menu::updateOrCreate(
+            $lookup,
+            [
+                'name'      => $data['name'],
+                'icon'      => $data['icon'],
+                'parent_id' => $data['parent_id'] ?? null,
+                'order'     => $data['order'],
+                'is_active' => true,
+            ]
+        );
     }
 }

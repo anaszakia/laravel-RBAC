@@ -21,6 +21,35 @@
 
     <div class="card card-lg">
         <div class="card-body p-0">
+            <div class="p-4 border-bottom">
+                <form action="{{ route('roles.index') }}" method="GET">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-8 col-lg-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="ti ti-search"></i>
+                                </span>
+                                <input type="text"
+                                    name="search"
+                                    class="form-control"
+                                    value="{{ request('search') }}"
+                                    placeholder="Cari nama role atau slug">
+                            </div>
+                        </div>
+                        <div class="col-md-auto">
+                            <button type="submit" class="btn btn-primary">
+                                Cari
+                            </button>
+                            @if(request('search'))
+                                <a href="{{ route('roles.index') }}" class="btn btn-white">
+                                    Reset
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </form>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-hover table-centered mb-0">
                     <thead>
@@ -36,7 +65,7 @@
                     <tbody>
                         @forelse ($roles as $role)
                             <tr>
-                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $roles->firstItem() + $loop->index }}</td>
                                 <td>
                                     <span class="badge bg-primary-subtle text-primary-emphasis fs-6">
                                         {{ $role->name }}
@@ -68,13 +97,23 @@
                         @empty
                             <tr>
                                 <td colspan="6" class="text-center text-muted py-6">
-                                    Belum ada role. <a href="{{ route('roles.create') }}">Tambah sekarang</a>
+                                    @if(request('search'))
+                                        Role tidak ditemukan.
+                                    @else
+                                        Belum ada role. <a href="{{ route('roles.create') }}">Tambah sekarang</a>
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
+
+            @if($roles->hasPages())
+                <div class="px-4 py-3 border-top">
+                    {{ $roles->links() }}
+                </div>
+            @endif
         </div>
     </div>
 

@@ -10,6 +10,9 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
+            // Dashboard
+            ['name' => 'Lihat Dashboard', 'slug' => 'dashboard.view'],
+
             // Users
             ['name' => 'Lihat User',   'slug' => 'users.view'],
             ['name' => 'Buat User',    'slug' => 'users.create'],
@@ -21,6 +24,12 @@ class PermissionSeeder extends Seeder
             ['name' => 'Buat Role',    'slug' => 'roles.create'],
             ['name' => 'Edit Role',    'slug' => 'roles.edit'],
             ['name' => 'Hapus Role',   'slug' => 'roles.delete'],
+
+            // Permissions
+            ['name' => 'Lihat Permission', 'slug' => 'permissions.view'],
+            ['name' => 'Buat Permission',  'slug' => 'permissions.create'],
+            ['name' => 'Edit Permission',  'slug' => 'permissions.edit'],
+            ['name' => 'Hapus Permission', 'slug' => 'permissions.delete'],
 
             // Menus
             ['name' => 'Lihat Menu',   'slug' => 'menus.view'],
@@ -36,7 +45,7 @@ class PermissionSeeder extends Seeder
         // Assign semua permission ke role SuperAdmin
         $admin = Role::where('slug', 'superadmin')->first();
         if ($admin) {
-            $admin->permissions()->sync(Permission::pluck('id'));
+            $admin->permissions()->sync(Permission::pluck('id')->all());
         }
     }
 }

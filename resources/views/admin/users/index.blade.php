@@ -23,6 +23,35 @@
 
     <div class="card card-lg">
         <div class="card-body p-0">
+            <div class="p-4 border-bottom">
+                <form action="{{ route('users.index') }}" method="GET">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-8 col-lg-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="ti ti-search"></i>
+                                </span>
+                                <input type="text"
+                                    name="search"
+                                    class="form-control"
+                                    value="{{ request('search') }}"
+                                    placeholder="Cari nama, email, atau phone">
+                            </div>
+                        </div>
+                        <div class="col-md-auto">
+                            <button type="submit" class="btn btn-primary">
+                                Cari
+                            </button>
+                            @if(request('search'))
+                                <a href="{{ route('users.index') }}" class="btn btn-white">
+                                    Reset
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </form>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-hover table-centered mb-0">
                     <thead>
@@ -100,8 +129,12 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="text-center text-muted py-6">
-                                    Belum ada user.
-                                    <a href="{{ route('users.create') }}">Tambah sekarang</a>
+                                    @if(request('search'))
+                                        User tidak ditemukan.
+                                    @else
+                                        Belum ada user.
+                                        <a href="{{ route('users.create') }}">Tambah sekarang</a>
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse
