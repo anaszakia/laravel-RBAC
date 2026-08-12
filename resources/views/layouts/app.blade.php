@@ -93,6 +93,7 @@
     <script>
         const TIMEOUT    = 10 * 60 * 1000; // 10 menit
         const WARNING_AT = 9 * 60 * 1000;  // peringatan di menit ke-9
+        const LOGIN_URL  = '{{ route('login') }}';
         let warningShown = false;
         let lastActivity = Date.now();
 
@@ -135,7 +136,7 @@
 
             // Auto logout di client side
             if (idle >= TIMEOUT) {
-                document.getElementById('logout-form').submit();
+                window.location.replace(LOGIN_URL);
             }
 
         }, 5000); // cek setiap 5 detik
