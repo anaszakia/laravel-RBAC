@@ -17,6 +17,8 @@ Route::post('/forgot-password', fn() => back()->with('status', 'Link dikirim!'))
 Route::get('/reset-password/{token?}', fn($token = '') => view('auth.reset-password', compact('token')))->name('password.reset');
 Route::post('/reset-password', fn() => redirect()->route('login'))->name('password.update');
 Route::get('/otp-verification', fn() => view('auth.otp-verification'))->name('otp.verification');
+Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('auth.google.redirect');
+Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
 // Protected routes
 Route::middleware(['auth.custom', 'auto.logout'])->group(function () {
