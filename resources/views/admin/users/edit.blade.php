@@ -180,6 +180,8 @@
                     </div>
                 </div>
 
+    </form>
+
                 {{-- Danger Zone --}}
                 @if(can('users.delete') && $user->id !== session('user_id'))
                     <div class="card card-lg border-danger">
@@ -202,7 +204,6 @@
             </div>
 
         </div>
-    </form>
 
 @endsection
 

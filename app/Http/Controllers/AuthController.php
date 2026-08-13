@@ -40,8 +40,12 @@ class AuthController extends Controller
         return back()->withErrors(['email' => 'Email atau password salah.'])->withInput();
     }
 
-    public function redirectToGoogle()
+    public function redirectToGoogle(Request $request)
     {
+        // Save intent so callback knows whether to auto-register or only login
+        $intent = $request->query('intent', 'login');
+        session(['oauth_intent' => $intent]);
+
         return Socialite::driver('google')->redirect();
     }
 
@@ -54,26 +58,56 @@ class AuthController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'Login dengan Google gagal, coba lagi.']);
         }
 
+        // Retrieve intent (login or register) and then remove it from session
+        $intent = session()->pull('oauth_intent', 'login');
+
         // Cari berdasarkan google_id dulu, fallback ke email (untuk user lama yang daftar manual)
         $user = User::where('google_id', $googleUser->getId())
             ->orWhere('email', $googleUser->getEmail())
             ->first();
 
-        if (! $user) {
-            // Sesuaikan slug role default di sini dengan yang ada di tabel roles kamu
-            $defaultRole = Role::where('slug', 'user')->first();
+        // Pastikan role default 'user' ada (jika belum, buat)
+        $defaultRole = Role::firstOrCreate(
+            ['slug' => 'user'],
+            ['name' => 'User']
+        );
 
+        if (! $user) {
+            // If the flow was initiated from the login page, do not auto-register
+            if ($intent !== 'register') {
+                return redirect()->route('login')->withErrors(['email' => 'Akun belum terdaftar. Silakan daftar terlebih dahulu.']);
+            }
             $user = User::create([
                 'name'              => $googleUser->getName(),
                 'email'             => $googleUser->getEmail(),
                 'google_id'         => $googleUser->getId(),
                 'password'          => bcrypt(Str::random(24)), // tidak pernah dipakai untuk login
-                'role_id'           => $defaultRole?->id,
+                'role_id'           => $defaultRole->id,
                 'email_verified_at' => now(),
             ]);
-        } elseif (! $user->google_id) {
-            // User lama yang sebelumnya daftar manual, sekarang login pakai Google dengan email yang sama
-            $user->update(['google_id' => $googleUser->getId()]);
+
+            // Pastikan relasi pivot juga terhubung
+            $user->roles()->syncWithoutDetaching([$defaultRole->id]);
+        } else {
+            $updates = [];
+            if (! $user->google_id) {
+                // User lama yang sebelumnya daftar manual, sekarang login pakai Google dengan email yang sama
+                $updates['google_id'] = $googleUser->getId();
+            }
+
+            if (! $user->role_id) {
+                // Pastikan user punya role default
+                $updates['role_id'] = $defaultRole->id;
+            }
+
+            if (! empty($updates)) {
+                $user->update($updates);
+            }
+
+            // Pastikan relasi pivot juga terhubung
+            if (! $user->roles()->where('roles.id', $defaultRole->id)->exists()) {
+                $user->roles()->syncWithoutDetaching([$defaultRole->id]);
+            }
         }
 
         Auth::login($user, remember: true);

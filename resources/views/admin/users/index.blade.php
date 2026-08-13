@@ -88,9 +88,13 @@
                                 <td>{{ $user->email }}</td>
                                 <td>{{ $user->phone ?? '-' }}</td>
                                 <td>
-                                    @if($user->role)
+                                    @php
+                                        $displayRole = $user->role ?? $user->roles->first();
+                                    @endphp
+
+                                    @if($displayRole)
                                         <span class="badge bg-primary-subtle text-primary-emphasis">
-                                            {{ $user->role->name }}
+                                            {{ $displayRole->name }}
                                         </span>
                                     @else
                                         <span class="text-muted">-</span>
