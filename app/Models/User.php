@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Passkeys\Contracts\PasskeyUser;
+use Laravel\Passkeys\PasskeyAuthenticatable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements PasskeyUser
 {
+    use PasskeyAuthenticatable;
+
     protected $fillable = ['name', 'email', 'password', 'avatar', 'phone', 'address'];
 
     protected $hidden = ['password', 'remember_token'];

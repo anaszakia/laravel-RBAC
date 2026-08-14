@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta content="Codescandy" name="author">
     <title>@yield('title', 'Dasher Dashboard')</title>
 
@@ -29,6 +30,7 @@
     <link rel="stylesheet" href="{{ asset('css/theme.css') }}" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+    @vite(['resources/js/app.js'])
 
     @stack('styles')
 </head>
@@ -146,6 +148,32 @@
     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
         @csrf
     </form>
+
+    @if (session('show_passkey_prompt') && authUser()?->passkeys()->doesntExist())
+        <div class="modal fade" id="passkeyPromptModal" tabindex="-1" aria-labelledby="passkeyPromptModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="passkeyPromptModalLabel">Daftarkan Passkey</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-4">Login berikutnya bisa memakai fingerprint, Face ID, Windows Hello, PIN perangkat, atau security key.</p>
+                        <label class="form-label" for="passkeyName">Nama perangkat</label>
+                        <input type="text" class="form-control" id="passkeyName" value="{{ gethostname() ?: 'Perangkat saya' }}" data-passkey-name>
+                        <div class="alert alert-danger py-2 small d-none mt-3 mb-0" data-passkey-register-message></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-white" data-bs-dismiss="modal">Nanti</button>
+                        <button type="button" class="btn btn-primary" data-passkey-register>
+                            <span class="me-2"><i class="ti ti-fingerprint"></i></span>
+                            Daftarkan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- SweetAlert untuk session flash --}}
     @include('layouts.sweetalert')

@@ -5,7 +5,7 @@ if (!function_exists('authUser')) {
     {
         static $user = null;
         if (!$user && session('user_id')) {
-            $user = \App\Models\User::with('roles.permissions')
+            $user = \App\Models\User::with('roles.permissions', 'passkeys')
                 ->find(session('user_id'));
         }
         return $user;

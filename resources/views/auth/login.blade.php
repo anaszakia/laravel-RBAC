@@ -30,7 +30,7 @@
                                 <div class="mb-3">
                                     <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
                                     <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                        id="email" name="email" value="{{ old('email') }}" required />
+                                        id="email" name="email" value="{{ old('email') }}" autocomplete="email webauthn" required />
                                     @error('email')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -48,7 +48,7 @@
                                 </div>
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="remember" id="rememberMe" />
+                                        <input class="form-check-input" type="checkbox" name="remember" id="rememberMe" data-passkey-remember />
                                         <label class="form-check-label" for="rememberMe">Ingat Saya</label>
                                     </div>
                                     @if (Route::has('password.request'))
@@ -65,6 +65,13 @@
                                 <span class="text-muted small">Atau masuk dengan</span>
                                 <hr class="flex-grow-1 my-0">
                             </div>
+                            <div class="d-grid mb-3">
+                                <button class="btn btn-outline-primary" type="button" data-passkey-login>
+                                    <span class="me-2"><i class="ti ti-fingerprint"></i></span>
+                                    Passkey
+                                </button>
+                            </div>
+                            <div class="alert alert-danger py-2 small d-none" data-passkey-login-message></div>
                             <div class="d-flex gap-2 justify-content-between">
                                 <a href="{{ route('auth.google.redirect') }}?intent=login" class="btn btn-google w-100">
                                     <span class="me-2">

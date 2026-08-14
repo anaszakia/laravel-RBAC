@@ -27,12 +27,20 @@ class AuthController extends Controller
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->boolean('remember'))) {
             $request->session()->regenerate();
 
+            // Reload user dengan relasi passkeys untuk memastikan data terbaru
+            $user = Auth::user()->loadMissing('passkeys');
+
             session([
                 'user_id'        => Auth::id(),
-                'user_name'      => Auth::user()->name,
-                'user_role'      => Auth::user()->role?->slug,
+                'user_name'      => $user->name,
+                'user_role'      => $user->role?->slug,
                 'last_activity'  => now()->timestamp,
             ]);
+
+            // Selalu tunjukkan prompt passkey jika user belum punya passkey
+            if ($user->passkeys()->doesntExist()) {
+                return redirect()->route('dashboard')->with('show_passkey_prompt', true);
+            }
 
             return redirect()->route('dashboard');
         }
@@ -113,12 +121,20 @@ class AuthController extends Controller
         Auth::login($user, remember: true);
         request()->session()->regenerate();
 
+        // Reload user dengan relasi passkeys untuk memastikan data terbaru
+        $user = Auth::user()->loadMissing('passkeys');
+
         session([
             'user_id'        => Auth::id(),
-            'user_name'      => Auth::user()->name,
-            'user_role'      => Auth::user()->role?->slug,
+            'user_name'      => $user->name,
+            'user_role'      => $user->role?->slug,
             'last_activity'  => now()->timestamp,
         ]);
+
+        // Selalu tunjukkan prompt passkey jika user belum punya passkey
+        if ($user->passkeys()->doesntExist()) {
+            return redirect()->route('dashboard')->with('show_passkey_prompt', true);
+        }
 
         return redirect()->route('dashboard');
     }

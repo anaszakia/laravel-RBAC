@@ -5,6 +5,9 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PermissionController;
+use Laravel\Passkeys\Http\Controllers\PasskeyConfirmationController;
+use Laravel\Passkeys\Http\Controllers\PasskeyLoginController;
+use Laravel\Passkeys\Http\Controllers\PasskeyRegistrationController;
 
 
 // Auth
@@ -19,6 +22,27 @@ Route::post('/reset-password', fn() => redirect()->route('login'))->name('passwo
 Route::get('/otp-verification', fn() => view('auth.otp-verification'))->name('otp.verification');
 Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('auth.google.redirect');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+
+// Passkeys
+Route::get('/passkeys/login/options', [PasskeyLoginController::class, 'index'])
+    ->middleware('guest:web')
+    ->name('passkey.login-options');
+Route::post('/passkeys/login', [PasskeyLoginController::class, 'store'])
+    ->middleware('guest:web')
+    ->name('passkey.login');
+
+Route::middleware(['auth:web', 'auth.custom'])->group(function () {
+    Route::get('/passkeys/confirm/options', [PasskeyConfirmationController::class, 'index'])
+        ->name('passkey.confirm-options');
+    Route::post('/passkeys/confirm', [PasskeyConfirmationController::class, 'store'])
+        ->name('passkey.confirm');
+    Route::get('/user/passkeys/options', [PasskeyRegistrationController::class, 'index'])
+        ->name('passkey.registration-options');
+    Route::post('/user/passkeys', [PasskeyRegistrationController::class, 'store'])
+        ->name('passkey.store');
+    Route::delete('/user/passkeys/{passkey}', [PasskeyRegistrationController::class, 'destroy'])
+        ->name('passkey.destroy');
+});
 
 // Protected routes
 Route::middleware(['auth.custom', 'auto.logout'])->group(function () {
