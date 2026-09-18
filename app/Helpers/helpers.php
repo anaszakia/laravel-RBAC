@@ -106,8 +106,16 @@ function minio_info(string $path): array
  */
 function minio_avatar(?string $path, string $name = 'User'): string
 {
-    if ($path && minio_exists($path)) {
-        return minio_url($path);
+    if ($path) {
+        try {
+            return minio_temp_url($path, 1440);
+        } catch (\Throwable $e) {
+            try {
+                return minio_url($path);
+            } catch (\Throwable $e2) {
+                // fallback below
+            }
+        }
     }
     // Fallback ke UI Avatars
     return 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=0d6efd&color=fff&size=128';

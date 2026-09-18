@@ -1,10 +1,7 @@
 @php
     $userId = session('user_id');
     $headerUser = $userId ? \App\Models\User::find($userId) : null;
-    $minio = app(\App\Services\MinioService::class);
-    $avatarUrl = $headerUser?->avatar 
-        ? $minio->url($headerUser->avatar) 
-        : 'https://ui-avatars.com/api/?name=' . urlencode($headerUser?->name ?? 'Guest') . '&background=0d6efd&color=fff&size=128';
+    $avatarUrl = minio_avatar($headerUser?->avatar, $headerUser?->name ?? 'Guest');
 @endphp
 
 <!-- topbar -->
