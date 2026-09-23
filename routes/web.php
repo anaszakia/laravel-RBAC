@@ -53,8 +53,9 @@ Route::middleware(['auth.custom', 'auto.logout'])->group(function () {
     Route::middleware(['role:superadmin'])->group(function () {
         Route::resource('/menus', MenuController::class);
         Route::resource('/roles', RoleController::class);
+        Route::post('/permissions/sync-routes', [PermissionController::class, 'syncRoutes'])->name('permissions.sync-routes');
         Route::resource('/permissions', PermissionController::class);
-});
+    });
 
 // Keep-alive untuk reset session timeout
 Route::post('/keep-alive', function () {
@@ -62,32 +63,6 @@ Route::post('/keep-alive', function () {
     return response()->json(['status' => 'ok']);
 })->middleware(['auth.custom'])->name('keep.alive');
 
-    // Users dengan permission per aksi
-        Route::get('/users', [UserController::class, 'index'])
-            ->name('users.index')
-            ->middleware('permission:users.view');
-
-        Route::get('/users/create', [UserController::class, 'create'])
-            ->name('users.create')
-            ->middleware('permission:users.create');
-
-        Route::post('/users', [UserController::class, 'store'])
-            ->name('users.store')
-            ->middleware('permission:users.create');
-
-        Route::get('/users/{user}', [UserController::class, 'show'])
-            ->name('users.show')
-            ->middleware('permission:users.view');
-
-        Route::get('/users/{user}/edit', [UserController::class, 'edit'])
-            ->name('users.edit')
-            ->middleware('permission:users.edit');
-
-        Route::put('/users/{user}', [UserController::class, 'update'])
-            ->name('users.update')
-            ->middleware('permission:users.edit');
-
-        Route::delete('/users/{user}', [UserController::class, 'destroy'])
-            ->name('users.destroy')
-            ->middleware('permission:users.delete');
-    });
+    // Modul Users (Permissions ditangani otomatis oleh Trait HasAutoPermissions di UserController)
+    Route::resource('/users', UserController::class);
+});

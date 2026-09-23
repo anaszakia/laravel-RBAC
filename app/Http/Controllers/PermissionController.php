@@ -3,10 +3,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Services\PermissionSyncService;
 use Illuminate\Http\Request;
 
 class PermissionController extends Controller
 {
+    public function syncRoutes(PermissionSyncService $syncService)
+    {
+        $result = $syncService->syncFromRoutes();
+
+        $message = "Sinkronisasi berhasil! {$result['total_detected']} permission terdeteksi di route, {$result['created_count']} permission baru ditambahkan.";
+        
+        return redirect()->route('permissions.index')->with('success', $message);
+    }
+
     public function index(Request $request)
     {
         $search = trim((string) $request->query('search'));

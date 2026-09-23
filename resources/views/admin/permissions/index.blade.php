@@ -14,9 +14,17 @@
                 </ol>
             </nav>
         </div>
-        <a href="{{ route('permissions.create') }}" class="btn btn-primary">
-            <i class="ti ti-plus me-1"></i> Tambah Permission
-        </a>
+        <div class="d-flex gap-2">
+            <form action="{{ route('permissions.sync-routes') }}" method="POST" onsubmit="return confirm('Pindai semua route dan sinkronkan permission ke database?')">
+                @csrf
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="ti ti-refresh me-1"></i> Sync dari Route
+                </button>
+            </form>
+            <a href="{{ route('permissions.create') }}" class="btn btn-primary">
+                <i class="ti ti-plus me-1"></i> Tambah Permission
+            </a>
+        </div>
     </div>
 
     <div class="card card-lg">

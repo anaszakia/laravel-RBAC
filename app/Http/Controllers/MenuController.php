@@ -1,8 +1,10 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Menu;
 use App\Models\Role;
+use App\Services\PermissionSyncService;
 use Illuminate\Http\Request;
 
 class MenuController extends Controller
@@ -20,8 +22,8 @@ class MenuController extends Controller
                         ->orWhere('icon', 'like', "%{$search}%")
                         ->orWhereHas('children', function ($query) use ($search) {
                             $query->where('name', 'like', "%{$search}%")
-                                ->orWhere('url', 'like', "%{$search}%")
-                                ->orWhere('icon', 'like', "%{$search}%");
+                                  ->orWhere('url', 'like', "%{$search}%")
+                                  ->orWhere('icon', 'like', "%{$search}%");
                         });
                 });
             })
@@ -40,16 +42,18 @@ class MenuController extends Controller
         return view('admin.menus.create', compact('parents', 'roles'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, PermissionSyncService $permissionSyncService)
     {
         $request->validate([
-            'name'      => 'required|string|max:100',
-            'url'       => 'nullable|string|max:255',
-            'icon'      => 'nullable|string|max:100',
-            'parent_id' => 'nullable|exists:menus,id',
-            'order'     => 'nullable|integer',
-            'roles'     => 'nullable|array',
-            'roles.*'   => 'exists:roles,id',
+            'name'                    => 'required|string|max:100',
+            'url'                     => 'nullable|string|max:255',
+            'icon'                    => 'nullable|string|max:100',
+            'parent_id'               => 'nullable|exists:menus,id',
+            'order'                   => 'nullable|integer',
+            'roles'                   => 'nullable|array',
+            'roles.*'                 => 'exists:roles,id',
+            'auto_generate_permissions' => 'nullable|boolean',
+            'permission_slug'         => 'nullable|string|max:100',
         ]);
 
         $menu = Menu::create([
@@ -65,8 +69,29 @@ class MenuController extends Controller
             $menu->roles()->sync($request->roles);
         }
 
+        $flashMessage = 'Menu berhasil ditambahkan!';
+
+        // Auto generate CRUD permissions jika opsi dicentang
+        if ($request->boolean('auto_generate_permissions')) {
+            $baseSlug = $request->filled('permission_slug')
+                ? $request->permission_slug
+                : trim(str_replace('/', '', (string) $request->url));
+
+            if (!$baseSlug) {
+                $baseSlug = \Illuminate\Support\Str::slug($request->name);
+            }
+
+            $permissionSyncService->generateCrudPermissions(
+                $request->name,
+                $baseSlug,
+                $request->roles ?? []
+            );
+
+            $flashMessage .= " & 4 Permission CRUD ({$baseSlug}.*) berhasil dibuat otomatis!";
+        }
+
         return redirect()->route('menus.index')
-            ->with('success', 'Menu berhasil ditambahkan!');
+            ->with('success', $flashMessage);
     }
 
     public function edit(Menu $menu)

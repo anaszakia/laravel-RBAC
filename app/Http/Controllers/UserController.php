@@ -4,17 +4,19 @@ namespace App\Http\Controllers;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\MinioService;
+use App\Traits\HasAutoPermissions;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\Hash;
 
-class UserController extends Controller
+class UserController extends Controller implements HasMiddleware
 {
+    use HasAutoPermissions;
+
     public function __construct(protected MinioService $minio) {}
 
     public function index(Request $request)
     {
-        abort_unless(can('users.view'), 403);
-
         $search = trim((string) $request->query('search'));
 
         $users = User::with('role', 'roles')
@@ -34,8 +36,6 @@ class UserController extends Controller
 
     public function create()
     {
-        abort_unless(can('users.create'), 403);
-
         $roles = Role::orderBy('name')->get();
 
         return view('admin.users.create', compact('roles'));
@@ -43,8 +43,6 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        abort_unless(can('users.create'), 403);
-
         $request->validate([
             'name'      => 'required|string|max:100',
             'email'     => 'required|email|unique:users,email',
@@ -76,8 +74,6 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        abort_unless(can('users.view'), 403);
-
         $user->load('role', 'roles');
 
         return view('admin.users.show', compact('user'));
@@ -85,8 +81,6 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        abort_unless(can('users.edit'), 403);
-
         $roles = Role::orderBy('name')->get();
         $user->load('role', 'roles');
 
@@ -95,8 +89,6 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        abort_unless(can('users.edit'), 403);
-
         $request->validate([
             'name'     => 'required|string|max:100',
             'email'    => 'required|email|unique:users,email,' . $user->id,
@@ -138,8 +130,6 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        abort_unless(can('users.delete'), 403);
-
         if ($user->id === session('user_id')) {
             return redirect()->route('users.index')
                 ->with('error', 'Tidak bisa menghapus akun yang sedang login!');
