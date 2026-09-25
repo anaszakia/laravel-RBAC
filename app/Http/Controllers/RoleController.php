@@ -11,32 +11,15 @@ class RoleController extends Controller
 {
     public function index(Request $request)
     {
-        $search = trim((string) $request->query('search'));
-
-        $roles = Role::withCount('users')
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
+        $roles = Role::getPaginatedRoles($request->query('search'), 10);
 
         return view('admin.roles.index', compact('roles'));
     }
 
     public function create()
     {
-        $menus = Menu::with('children')
-            ->whereNull('parent_id')
-            ->orderBy('order')
-            ->get();
-
-        $permissions = Permission::orderBy('slug')
-            ->get()
-            ->groupBy(fn($p) => explode('.', $p->slug)[0]);
+        $menus = Menu::getRootMenusWithChildren();
+        $permissions = Permission::getGroupedByModule();
 
         return view('admin.roles.create', compact('menus', 'permissions'));
     }
@@ -66,14 +49,8 @@ class RoleController extends Controller
 
     public function edit(Role $role)
     {
-        $menus = Menu::with('children')
-            ->whereNull('parent_id')
-            ->orderBy('order')
-            ->get();
-
-        $permissions = Permission::orderBy('slug')
-            ->get()
-            ->groupBy(fn($p) => explode('.', $p->slug)[0]);
+        $menus = Menu::getRootMenusWithChildren();
+        $permissions = Permission::getGroupedByModule();
 
         $role->load('menus', 'permissions');
 

@@ -17,26 +17,14 @@ class UserController extends Controller implements HasMiddleware
 
     public function index(Request $request)
     {
-        $search = trim((string) $request->query('search'));
-
-        $users = User::with('role', 'roles')
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
+        $users = User::getPaginatedUsers($request->query('search'), 10);
 
         return view('admin.users.index', compact('users'));
     }
 
     public function create()
     {
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::getAllOrdered();
 
         return view('admin.users.create', compact('roles'));
     }
@@ -81,7 +69,7 @@ class UserController extends Controller implements HasMiddleware
 
     public function edit(User $user)
     {
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::getAllOrdered();
         $user->load('role', 'roles');
 
         return view('admin.users.edit', compact('user', 'roles'));

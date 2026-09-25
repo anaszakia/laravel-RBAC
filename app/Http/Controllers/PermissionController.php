@@ -19,25 +19,14 @@ class PermissionController extends Controller
 
     public function index(Request $request)
     {
-        $search = trim((string) $request->query('search'));
-
-        $permissions = Permission::with('roles')
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
+        $permissions = Permission::getPaginatedPermissions($request->query('search'), 10);
 
         return view('admin.permissions.index', compact('permissions'));
     }
 
     public function create()
     {
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::getAllOrdered();
         return view('admin.permissions.create', compact('roles'));
     }
 
@@ -65,7 +54,7 @@ class PermissionController extends Controller
 
     public function edit(Permission $permission)
     {
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::getAllOrdered();
         $permission->load('roles');
         return view('admin.permissions.edit', compact('permission', 'roles'));
     }

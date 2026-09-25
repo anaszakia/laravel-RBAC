@@ -11,34 +11,15 @@ class MenuController extends Controller
 {
     public function index(Request $request)
     {
-        $search = trim((string) $request->query('search'));
-
-        $menus = Menu::with('parent', 'roles', 'children.roles')
-            ->whereNull('parent_id')
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('url', 'like', "%{$search}%")
-                        ->orWhere('icon', 'like', "%{$search}%")
-                        ->orWhereHas('children', function ($query) use ($search) {
-                            $query->where('name', 'like', "%{$search}%")
-                                  ->orWhere('url', 'like', "%{$search}%")
-                                  ->orWhere('icon', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->withCount('children')
-            ->orderBy('order')
-            ->paginate(10)
-            ->withQueryString();
+        $menus = Menu::getPaginatedMenus($request->query('search'), 10);
 
         return view('admin.menus.index', compact('menus'));
     }
 
     public function create()
     {
-        $parents = Menu::whereNull('parent_id')->orderBy('order')->get();
-        $roles   = Role::all();
+        $parents = Menu::getParentOptions();
+        $roles   = Role::getAllOrdered();
         return view('admin.menus.create', compact('parents', 'roles'));
     }
 
@@ -96,11 +77,8 @@ class MenuController extends Controller
 
     public function edit(Menu $menu)
     {
-        $parents = Menu::whereNull('parent_id')
-            ->where('id', '!=', $menu->id)
-            ->orderBy('order')
-            ->get();
-        $roles = Role::all();
+        $parents = Menu::getParentOptions($menu->id);
+        $roles   = Role::getAllOrdered();
         $menu->load('roles');
 
         return view('admin.menus.edit', compact('menu', 'parents', 'roles'));

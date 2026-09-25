@@ -70,15 +70,10 @@ class AuthController extends Controller
         $intent = session()->pull('oauth_intent', 'login');
 
         // Cari berdasarkan google_id dulu, fallback ke email (untuk user lama yang daftar manual)
-        $user = User::where('google_id', $googleUser->getId())
-            ->orWhere('email', $googleUser->getEmail())
-            ->first();
+        $user = User::findByGoogleOrEmail($googleUser->getId(), $googleUser->getEmail());
 
-        // Pastikan role default 'user' ada (jika belum, buat)
-        $defaultRole = Role::firstOrCreate(
-            ['slug' => 'user'],
-            ['name' => 'User']
-        );
+        // Pastikan role default 'user' ada
+        $defaultRole = Role::getDefaultUserRole();
 
         if (! $user) {
             // If the flow was initiated from the login page, do not auto-register

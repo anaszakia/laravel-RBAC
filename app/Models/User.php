@@ -26,26 +26,86 @@ class User extends Authenticatable implements PasskeyUser
         return $this->belongsToMany(Role::class, 'user_role');
     }
 
-    // Cek apakah user punya role tertentu (by slug)
+    /**
+     * Cek role user menggunakan direct raw query/query builder (ultra fast untuk jutaan data)
+     */
     public function hasRole(string $slug): bool
     {
-        return $this->roles->contains('slug', $slug);
+        return \Illuminate\Support\Facades\DB::table('user_role')
+            ->join('roles', 'roles.id', '=', 'user_role.role_id')
+            ->where('user_role.user_id', $this->id)
+            ->where('roles.slug', $slug)
+            ->exists();
     }
 
+    /**
+     * Cek permission user menggunakan direct raw JOIN query (ultra fast untuk jutaan data)
+     */
     public function hasPermission(string $slug): bool
     {
-        // Cache agar tidak query berulang dalam satu request
-        return $this->roles
-            ->flatMap(fn($role) => $role->permissions)
-            ->contains('slug', $slug);
+        return \Illuminate\Support\Facades\DB::table('user_role')
+            ->join('role_permission', 'role_permission.role_id', '=', 'user_role.role_id')
+            ->join('permissions', 'permissions.id', '=', 'role_permission.permission_id')
+            ->where('user_role.user_id', $this->id)
+            ->where('permissions.slug', $slug)
+            ->exists();
     }
 
+    /**
+     * Cek multiple permission user menggunakan direct raw JOIN query
+     */
     public function hasAnyPermission(array $slugs): bool
     {
-        return $this->roles
-            ->flatMap(fn($role) => $role->permissions)
-            ->whereIn('slug', $slugs)
-            ->isNotEmpty();
+        return \Illuminate\Support\Facades\DB::table('user_role')
+            ->join('role_permission', 'role_permission.role_id', '=', 'user_role.role_id')
+            ->join('permissions', 'permissions.id', '=', 'role_permission.permission_id')
+            ->where('user_role.user_id', $this->id)
+            ->whereIn('permissions.slug', $slugs)
+            ->exists();
+    }
+
+    /**
+     * Find user by ID with high-performance optimized query
+     */
+    public static function findOptimized(int|string $id): ?self
+    {
+        return static::with('role', 'roles')->find($id);
+    }
+
+    /**
+     * Find user by Google ID or Email via direct query
+     */
+    public static function findByGoogleOrEmail(?string $googleId, ?string $email): ?self
+    {
+        return static::where(function ($query) use ($googleId, $email) {
+            if ($googleId) {
+                $query->where('google_id', $googleId);
+            }
+            if ($email) {
+                $query->orWhere('email', $email);
+            }
+        })->first();
+    }
+
+    /**
+     * Get paginated users with indexed search & lean relation loading
+     */
+    public static function getPaginatedUsers(?string $search = null, int $perPage = 10)
+    {
+        $query = static::select('users.id', 'users.name', 'users.email', 'users.phone', 'users.avatar', 'users.role_id', 'users.created_at')
+            ->with(['role:id,name,slug', 'roles:id,name,slug']);
+
+        if (!empty($search)) {
+            $query->where(function ($sub) use ($search) {
+                $sub->where('users.name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%")
+                    ->orWhere('users.phone', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->orderBy('users.name')
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     // Helper: ambil nama primary role
