@@ -3,11 +3,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use App\Models\Role;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -17,6 +20,81 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
+    public function showRegister()
+    {
+        if (Auth::check()) return redirect()->route('dashboard');
+        return view('auth.register');
+    }
+
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name'     => 'required|string|max:100',
+            'email'    => 'required|email|max:150|unique:users,email',
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(),
+                function ($attribute, $value, $fail) use ($request) {
+                    $email = strtolower((string) $request->input('email'));
+                    $name = strtolower((string) $request->input('name'));
+                    $passwordLower = strtolower((string) $value);
+
+                    // Username dari bagian sebelum @ pada email
+                    $emailUser = explode('@', $email)[0] ?? '';
+
+                    if (!empty($name) && str_contains($passwordLower, $name)) {
+                        $fail('Password tidak boleh mengandung nama Anda.');
+                    }
+
+                    if (!empty($email) && str_contains($passwordLower, $email)) {
+                        $fail('Password tidak boleh sama atau mengandung alamat email.');
+                    }
+
+                    if (!empty($emailUser) && strlen($emailUser) >= 3 && str_contains($passwordLower, $emailUser)) {
+                        $fail('Password tidak boleh mengandung username email Anda.');
+                    }
+                },
+            ],
+        ], [
+            'name.required'      => 'Nama lengkap wajib diisi.',
+            'email.required'     => 'Alamat email wajib diisi.',
+            'email.email'        => 'Format email tidak valid.',
+            'email.unique'       => 'Email ini sudah terdaftar.',
+            'password.required'  => 'Password wajib diisi.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+        ]);
+
+        $defaultRole = Role::getDefaultUserRole();
+
+        $user = User::create([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => Hash::make($request->password),
+            'role_id'  => $defaultRole->id,
+        ]);
+
+        $user->roles()->syncWithoutDetaching([$defaultRole->id]);
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        session([
+            'user_id'       => $user->id,
+            'user_name'     => $user->name,
+            'user_role'     => $user->role?->slug,
+            'last_activity' => now()->timestamp,
+        ]);
+
+        return redirect()->route('dashboard')->with('success', 'Pendaftaran berhasil! Selamat datang di Dasher.');
+    }
+
     public function login(Request $request)
     {
         $request->validate([
@@ -24,7 +102,23 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Key unik berdasarkan lowercase email dan IP address
+        $throttleKey = Str::transliterate(Str::lower($request->input('email')) . '|' . $request->ip());
+
+        // Cek jika percobaan gagal sudah mencapai batas 5 kali
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $minutes = ceil($seconds / 60);
+
+            return back()->withErrors([
+                'email' => "Terlalu banyak percobaan login yang gagal. Akun/IP ini dikunci sementara, silakan coba lagi dalam {$minutes} menit.",
+            ])->withInput();
+        }
+
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->boolean('remember'))) {
+            // Bersihkan hitungan throttle jika login berhasil
+            RateLimiter::clear($throttleKey);
+
             $request->session()->regenerate();
 
             // Reload user dengan relasi passkeys untuk memastikan data terbaru
@@ -45,7 +139,16 @@ class AuthController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return back()->withErrors(['email' => 'Email atau password salah.'])->withInput();
+        // Catat kegagalan login dengan durasi lockout 15 menit (900 detik)
+        RateLimiter::hit($throttleKey, 15 * 60);
+
+        $remainingAttempts = RateLimiter::remaining($throttleKey, 5);
+
+        $errorMessage = $remainingAttempts > 0
+            ? "Email atau password salah. Sisa percobaan: {$remainingAttempts} kali sebelum akun dikunci 15 menit."
+            : "Email atau password salah. Akun/IP ini telah dikunci selama 15 menit.";
+
+        return back()->withErrors(['email' => $errorMessage])->withInput();
     }
 
     public function redirectToGoogle(Request $request)

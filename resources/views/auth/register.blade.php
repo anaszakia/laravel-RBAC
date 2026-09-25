@@ -45,25 +45,45 @@
                                     @enderror
                                 </div>
                                 <div class="mb-3">
-                                    <label for="password" class="form-label">Password</label>
+                                    <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
                                     <div class="password-field position-relative">
                                         <input type="password" class="form-control fakePassword @error('password') is-invalid @enderror"
-                                            id="password" name="password" required />
+                                            id="password" name="password" required autocomplete="new-password" />
                                         <span><i class="ti ti-eye-off passwordToggler"></i></span>
                                         @error('password')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @else
-                                            <div class="invalid-feedback">Masukkan password.</div>
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
+                                    </div>
+                                    
+                                    {{-- Password Strength Meter UI --}}
+                                    <div class="mt-2" id="passwordStrengthWrapper">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small class="text-muted">Kekuatan Password:</small>
+                                            <small class="fw-bold" id="strengthText">-</small>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar" id="strengthBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        
+                                        <div class="mt-2 small" id="passwordRequirements">
+                                            <div class="text-muted mb-1"><small>Ketentuan password:</small></div>
+                                            <ul class="list-unstyled mb-0" style="font-size: 0.8rem;">
+                                                <li id="rule-length" class="text-danger"><i class="ti ti-circle-x me-1"></i> Minimal 8 karakter</li>
+                                                <li id="rule-case" class="text-danger"><i class="ti ti-circle-x me-1"></i> Kombinasi huruf besar & kecil (A-Z, a-z)</li>
+                                                <li id="rule-number" class="text-danger"><i class="ti ti-circle-x me-1"></i> Mengandung angka (0-9)</li>
+                                                <li id="rule-symbol" class="text-danger"><i class="ti ti-circle-x me-1"></i> Mengandung simbol unik (!@#$%^&*...)</li>
+                                                <li id="rule-user" class="text-danger"><i class="ti ti-circle-x me-1"></i> Tidak boleh sama/mengandung nama atau email</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="password_confirmation" class="form-label">Konfirmasi Password</label>
+                                    <label for="password_confirmation" class="form-label">Konfirmasi Password <span class="text-danger">*</span></label>
                                     <div class="password-field position-relative">
                                         <input type="password" class="form-control fakePassword"
-                                            id="password_confirmation" name="password_confirmation" required />
+                                            id="password_confirmation" name="password_confirmation" required autocomplete="new-password" />
                                         <span><i class="ti ti-eye-off passwordToggler"></i></span>
-                                        <div class="invalid-feedback">Konfirmasi password Anda.</div>
+                                        <div id="confirmFeedback" class="small mt-1 d-none"></div>
                                     </div>
                                 </div>
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
@@ -75,7 +95,7 @@
                                     </div>
                                 </div>
                                 <div class="d-grid">
-                                    <button class="btn btn-primary" type="submit">Daftar</button>
+                                    <button class="btn btn-primary" id="btnSubmit" type="submit">Daftar</button>
                                 </div>
                             </form>
 
@@ -110,3 +130,162 @@
     </section>
 </main>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const passwordInput = document.getElementById('password');
+    const confirmInput = document.getElementById('password_confirmation');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    const confirmFeedback = document.getElementById('confirmFeedback');
+    const btnSubmit = document.getElementById('btnSubmit');
+
+    const ruleLength = document.getElementById('rule-length');
+    const ruleCase = document.getElementById('rule-case');
+    const ruleNumber = document.getElementById('rule-number');
+    const ruleSymbol = document.getElementById('rule-symbol');
+    const ruleUser = document.getElementById('rule-user');
+
+    function updateRule(element, isValid) {
+        if (isValid) {
+            element.classList.remove('text-danger');
+            element.classList.add('text-success');
+            const icon = element.querySelector('i');
+            if (icon) icon.className = 'ti ti-circle-check me-1';
+        } else {
+            element.classList.remove('text-success');
+            element.classList.add('text-danger');
+            const icon = element.querySelector('i');
+            if (icon) icon.className = 'ti ti-circle-x me-1';
+        }
+    }
+
+    function calculateStrength(pwd) {
+        const name = (nameInput.value || '').trim().toLowerCase();
+        const email = (emailInput.value || '').trim().toLowerCase();
+        const emailUser = email ? email.split('@')[0] : '';
+        const pwdLower = pwd.toLowerCase();
+
+        // Rules check
+        const isLenValid = pwd.length >= 8;
+        const isCaseValid = /[A-Z]/.test(pwd) && /[a-z]/.test(pwd);
+        const isNumValid = /[0-9]/.test(pwd);
+        const isSymValid = /[^A-Za-z0-9]/.test(pwd);
+        
+        let isUserValid = true;
+        if (pwd.length > 0) {
+            if (name.length >= 3 && pwdLower.includes(name)) isUserValid = false;
+            if (email.length >= 3 && pwdLower.includes(email)) isUserValid = false;
+            if (emailUser.length >= 3 && pwdLower.includes(emailUser)) isUserValid = false;
+        }
+
+        updateRule(ruleLength, isLenValid);
+        updateRule(ruleCase, isCaseValid);
+        updateRule(ruleNumber, isNumValid);
+        updateRule(ruleSymbol, isSymValid);
+        updateRule(ruleUser, isUserValid);
+
+        if (!pwd) {
+            strengthBar.style.width = '0%';
+            strengthBar.className = 'progress-bar';
+            strengthText.textContent = '-';
+            strengthText.className = 'fw-bold';
+            return 0;
+        }
+
+        let score = 0;
+        if (isLenValid) score++;
+        if (isCaseValid) score++;
+        if (isNumValid) score++;
+        if (isSymValid) score++;
+        if (isUserValid) score++;
+
+        // Bonus length
+        if (pwd.length >= 12 && isLenValid && isCaseValid && isNumValid && isSymValid && isUserValid) {
+            score++;
+        }
+
+        // Level Akurasi: Lemah, Sedang, Kuat, Sangat Kuat
+        // Syarat Kuat: Memenuhi 8 char + upper/lower + number + symbol + not contain user info (score >= 5)
+        if (!isUserValid || score < 3) {
+            strengthBar.style.width = '25%';
+            strengthBar.className = 'progress-bar bg-danger';
+            strengthText.textContent = 'Lemah';
+            strengthText.className = 'fw-bold text-danger';
+            return 1;
+        } else if (score === 3 || score === 4) {
+            strengthBar.style.width = '50%';
+            strengthBar.className = 'progress-bar bg-warning';
+            strengthText.textContent = 'Sedang';
+            strengthText.className = 'fw-bold text-warning';
+            return 2;
+        } else if (score === 5) {
+            strengthBar.style.width = '75%';
+            strengthBar.className = 'progress-bar bg-primary';
+            strengthText.textContent = 'Kuat (Memenuhi Syarat)';
+            strengthText.className = 'fw-bold text-primary';
+            return 3;
+        } else {
+            strengthBar.style.width = '100%';
+            strengthBar.className = 'progress-bar bg-success';
+            strengthText.textContent = 'Sangat Kuat';
+            strengthText.className = 'fw-bold text-success';
+            return 4;
+        }
+    }
+
+    function checkConfirmation() {
+        const pwd = passwordInput.value;
+        const conf = confirmInput.value;
+
+        if (!conf) {
+            confirmFeedback.className = 'small mt-1 d-none';
+            return;
+        }
+
+        if (pwd === conf) {
+            confirmFeedback.className = 'small mt-1 text-success d-block';
+            confirmFeedback.innerHTML = '<i class="ti ti-check me-1"></i> Konfirmasi password cocok.';
+        } else {
+            confirmFeedback.className = 'small mt-1 text-danger d-block';
+            confirmFeedback.innerHTML = '<i class="ti ti-x me-1"></i> Password tidak cocok.';
+        }
+    }
+
+    passwordInput.addEventListener('input', function () {
+        calculateStrength(this.value);
+        checkConfirmation();
+    });
+
+    confirmInput.addEventListener('input', checkConfirmation);
+    nameInput.addEventListener('input', () => calculateStrength(passwordInput.value));
+    emailInput.addEventListener('input', () => calculateStrength(passwordInput.value));
+
+    // Submit handler
+    const form = document.querySelector('form.needs-validation');
+    form.addEventListener('submit', function (e) {
+        const strength = calculateStrength(passwordInput.value);
+        
+        // Minimal harus "Kuat" (level >= 3)
+        if (strength < 3) {
+            e.preventDefault();
+            e.stopPropagation();
+            alert('Password belum memenuhi standar keamanan minimal (Kuat). Harap lengkapi seluruh ketentuan password.');
+            passwordInput.focus();
+            return false;
+        }
+
+        if (passwordInput.value !== confirmInput.value) {
+            e.preventDefault();
+            e.stopPropagation();
+            alert('Konfirmasi password tidak cocok.');
+            confirmInput.focus();
+            return false;
+        }
+    });
+});
+</script>
+@endpush
