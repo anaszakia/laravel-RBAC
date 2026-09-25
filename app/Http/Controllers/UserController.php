@@ -46,7 +46,7 @@ class UserController extends Controller implements HasMiddleware
             $avatarPath = minio_upload($request->file('avatar'), 'avatars');
         }
 
-        User::create([
+        $createdUser = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
@@ -55,6 +55,11 @@ class UserController extends Controller implements HasMiddleware
             'address'  => $request->address,
             'avatar'   => $avatarPath,
         ]);
+
+        // Sync role pivot table
+        if ($request->filled('role_id')) {
+            $createdUser->roles()->sync([$request->role_id]);
+        }
 
         return redirect()->route('users.index')
             ->with('success', 'User berhasil ditambahkan!');
@@ -112,6 +117,13 @@ class UserController extends Controller implements HasMiddleware
 
         $user->update($data);
 
+        // Sync role pivot table
+        if ($request->filled('role_id')) {
+            $user->roles()->sync([$request->role_id]);
+        } else {
+            $user->roles()->detach();
+        }
+
         return redirect()->route('users.index')
             ->with('success', 'User berhasil diupdate!');
     }
@@ -123,11 +135,12 @@ class UserController extends Controller implements HasMiddleware
                 ->with('error', 'Tidak bisa menghapus akun yang sedang login!');
         }
 
-        // Hapus avatar dari MinIO
+        // Hapus avatar dari storage
         if ($user->avatar) {
             minio_delete($user->avatar);
         }
 
+        $user->roles()->detach();
         $user->delete();
 
         return redirect()->route('users.index')

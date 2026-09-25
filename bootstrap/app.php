@@ -11,11 +11,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeadersMiddleware::class,
+        ]);
+
         $middleware->alias([
             'auth.custom' => \App\Http\Middleware\AuthMiddleware::class,
             'role'        => \App\Http\Middleware\RoleMiddleware::class,
             'permission'  => \App\Http\Middleware\PermissionMiddleware::class,
-            'auto.logout'  => \App\Http\Middleware\AutoLogoutMiddleware::class,
+            'auto.logout' => \App\Http\Middleware\AutoLogoutMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
