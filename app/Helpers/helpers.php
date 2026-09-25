@@ -108,17 +108,36 @@ function minio_avatar(?string $path, string $name = 'User'): string
 {
     if ($path) {
         try {
-            return minio_temp_url($path, 1440);
+            return minio_url($path);
         } catch (\Throwable $e) {
-            try {
-                return minio_url($path);
-            } catch (\Throwable $e2) {
-                // fallback below
-            }
+            // fallback below
         }
     }
     // Fallback ke UI Avatars
     return 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=0d6efd&color=fff&size=128';
+}
+
+/**
+ * Universal Storage Helper Aliases
+ */
+function storage_avatar(?string $path, string $name = 'User'): string
+{
+    return minio_avatar($path, $name);
+}
+
+function storage_url(?string $path): string
+{
+    return minio_url($path);
+}
+
+function storage_upload(\Illuminate\Http\UploadedFile $file, string $folder = 'uploads'): string
+{
+    return minio_upload($file, $folder);
+}
+
+function storage_delete(?string $path): bool
+{
+    return minio_delete($path);
 }
 
 // ==========================================

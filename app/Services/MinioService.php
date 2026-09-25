@@ -7,7 +7,28 @@ use Illuminate\Support\Str;
 
 class MinioService
 {
-    protected string $disk = 'minio';
+    protected string $disk;
+
+    public function __construct(?string $disk = null)
+    {
+        $this->disk = $disk ?? (config('filesystems.minio_active', true) ? 'minio' : 'public');
+    }
+
+    /**
+     * Get active disk name
+     */
+    public function getDisk(): string
+    {
+        return $this->disk;
+    }
+
+    /**
+     * Check whether MinIO is actively used
+     */
+    public function isMinio(): bool
+    {
+        return $this->disk === 'minio';
+    }
 
     /**
      * Get base folder dari APP_NAME
@@ -77,14 +98,17 @@ class MinioService
 
     /**
      * Get URL untuk browser (public accessible)
-     * Fix localhost issue untuk development
+     * Support MinIO dan Local storage secara dinamis
      */
     public function url(string $path): string
     {
+        if ($this->disk === 'public') {
+            return asset('storage/' . ltrim($path, '/'));
+        }
+
         $url = Storage::disk($this->disk)->url($path);
         
-        // Fix localhost untuk browser access
-        // Jika running di development dengan 127.0.0.1, convert ke localhost
+        // Fix localhost untuk browser access jika running di development
         if (str_contains($url, '127.0.0.1')) {
             $url = str_replace('127.0.0.1', 'localhost', $url);
         }
@@ -93,11 +117,15 @@ class MinioService
     }
 
     /**
-     * Temporary URL
+     * Temporary URL (fallback ke url biasa jika disk tidak mendukung temporary URL)
      */
     public function temporaryUrl(string $path, int $minutes = 30): string
     {
-        return Storage::disk($this->disk)->temporaryUrl($path, now()->addMinutes($minutes));
+        try {
+            return Storage::disk($this->disk)->temporaryUrl($path, now()->addMinutes($minutes));
+        } catch (\Throwable $e) {
+            return $this->url($path);
+        }
     }
 
     /**

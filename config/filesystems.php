@@ -10,10 +10,11 @@ return [
     | Here you may specify the default filesystem disk that should be used
     | by the framework. The "local" disk, as well as a variety of cloud
     | based disks are available to your application for file storage.
-    |
     */
 
-    'default' => env('FILESYSTEM_DISK', 'local'),
+    'minio_active' => (bool) env('MINIO_ACTIVE', true),
+
+    'default' => env('MINIO_ACTIVE', true) ? 'minio' : env('FILESYSTEM_DISK', 'public'),
 
     /*
     |--------------------------------------------------------------------------
