@@ -23,6 +23,28 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
     <link rel="stylesheet" href="{{ asset('css/theme.css') }}" />
+    <style>
+        [data-bs-theme="light"] .auth-form-card {
+            --ds-card-bg: #fff;
+            --ds-card-color: #141a21;
+            --ds-card-border-color: #e5e7eb;
+            color: #141a21;
+        }
+
+        [data-bs-theme="light"] .auth-form-card .form-label {
+            color: #141a21;
+        }
+
+        [data-bs-theme="light"] .auth-form-card .form-control {
+            color: #000;
+            background-color: #fff;
+        }
+
+        [data-bs-theme="light"] .auth-form-card .form-control::placeholder {
+            color: #637381;
+            opacity: 1;
+        }
+    </style>
     @vite(['resources/js/app.js'])
 
     @stack('styles')

@@ -20,7 +20,7 @@
         </a>
     </div>
 
-    <form action="{{ route('users.store') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('users.store') }}" method="POST" enctype="multipart/form-data" class="user-create-form">
         @csrf
         <div class="row">
 
@@ -183,6 +183,17 @@
     </form>
 
 @endsection
+
+@push('styles')
+<style>
+    [data-bs-theme="light"] .user-create-form .form-label,
+    [data-bs-theme="light"] .user-create-form .form-control,
+    [data-bs-theme="light"] .user-create-form .form-select,
+    [data-bs-theme="light"] .user-create-form .form-check-label {
+        color: #000;
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>

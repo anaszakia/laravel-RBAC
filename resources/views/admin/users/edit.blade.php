@@ -20,7 +20,7 @@
         </a>
     </div>
 
-    <form action="{{ route('users.update', $user) }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('users.update', $user) }}" method="POST" enctype="multipart/form-data" class="user-edit-form">
         @csrf
         @method('PUT')
         <div class="row">
@@ -206,6 +206,17 @@
         </div>
 
 @endsection
+
+@push('styles')
+<style>
+    [data-bs-theme="light"] .user-edit-form .form-label,
+    [data-bs-theme="light"] .user-edit-form .form-control,
+    [data-bs-theme="light"] .user-edit-form .form-select,
+    [data-bs-theme="light"] .user-edit-form .form-check-label {
+        color: #000;
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>

@@ -23,7 +23,7 @@
             </div>
             <div class="row justify-content-center">
                 <div class="col-xl-5 col-lg-6 col-md-8 col-12">
-                    <div class="card card-lg mb-6">
+                    <div class="card card-lg auth-form-card mb-6">
                         <div class="card-body p-6">
                             <form method="POST" action="{{ route('login') }}" class="needs-validation mb-6" novalidate>
                                 @csrf

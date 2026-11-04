@@ -30,6 +30,14 @@
     <link rel="stylesheet" href="{{ asset('css/theme.css') }}" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+    <style>
+        [data-bs-theme="light"] .admin-form .form-label,
+        [data-bs-theme="light"] .admin-form .form-control,
+        [data-bs-theme="light"] .admin-form .form-select,
+        [data-bs-theme="light"] .admin-form .form-check-label {
+            color: #000;
+        }
+    </style>
     @vite(['resources/js/app.js'])
 
     @stack('styles')

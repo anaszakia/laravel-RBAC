@@ -24,7 +24,7 @@
         <div class="col-xl-8">
             <div class="card card-lg">
                 <div class="card-body">
-                    <form action="{{ route('permissions.store') }}" method="POST">
+                    <form action="{{ route('permissions.store') }}" method="POST" class="admin-form">
                         @csrf
 
                         <div class="mb-4">
